@@ -33,7 +33,7 @@ defmodule Ectoplasm do
         struct = Kernel.struct!(@test_module)
         cs = @test_module.changeset(struct, params)
         refute cs.valid?
-        assert {:name, {unquote(error_message), []}} in cs.errors
+        assert {unquote(field), {unquote(error_message), []}} in cs.errors
       end
     end
   end

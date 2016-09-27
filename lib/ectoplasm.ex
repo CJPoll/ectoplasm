@@ -46,8 +46,13 @@ defmodule Ectoplasm do
         cs = @test_module.changeset(struct, params)
         assert cs.valid?
         __MODULE__.repository.insert!(cs)
-        {:error, cs} = __MODULE__.repository.insert(cs)
-        assert {unquote(field), {unquote(error_message), []}} in cs.errors
+
+        case __MODULE__.repository.insert(cs) do
+          {:error, cs} ->
+            assert {unquote(field), {unquote(error_message), []}} in cs.errors
+          _ -> flunk(error_message)
+        end
+
       end
     end
   end

@@ -19,6 +19,7 @@ end
 
 ```elixir
 defmodule MyApp.User.Test do
+	use MyApp.ModelCase
 	use Ectoplasm
 
 	repo MyApp.Repo

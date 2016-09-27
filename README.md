@@ -1,24 +1,33 @@
 # Ectoplasm
 
-**TODO: Add description**
+A thin DSL for testing ecto models
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
+In your mix.exs:
 
-  1. Add `ectoplasm` to your list of dependencies in `mix.exs`:
+```elixir
+defp deps() do
+	[
+		{:ectoplasm, git: "git@github.com:cjpoll/ectoplasm"}, # It's not on hex yet
+		...
+	]
+end
+```
 
-    ```elixir
-    def deps do
-      [{:ectoplasm, "~> 0.1.0"}]
-    end
-    ```
+## Usage
 
-  2. Ensure `ectoplasm` is started before your application:
+```elixir
+defmodule MyApp.User.Test do
+	use Ectoplasm
 
-    ```elixir
-    def application do
-      [applications: [:ectoplasm]]
-    end
-    ```
+	repo MyApp.Repo
+	testing MyApp.User
+	valid_params %{email: "myemail@gmail.com"}
 
+	describe "email" do
+		test_required(:email)
+		test_unique(:email)
+	end
+end
+```

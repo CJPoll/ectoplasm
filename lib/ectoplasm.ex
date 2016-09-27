@@ -40,14 +40,19 @@ defmodule Ectoplasm do
 
   defmacro test_unique(field, error_message \\ "has already been taken") do
     quote do
-      test "must be present" do
+      test "must be unique" do
         params = __MODULE__.valid_params()
         struct = Kernel.struct!(@test_module)
         cs = @test_module.changeset(struct, params)
         assert cs.valid?
         __MODULE__.repository.insert!(cs)
-        {:error, cs} = __MODULE__.repository.insert(cs)
-        assert {unquote(field), {unquote(error_message), []}} in cs.errors
+
+        case __MODULE__.repository.insert(cs) do
+          {:error, cs} ->
+            assert {unquote(field), {unquote(error_message), []}} in cs.errors
+          _ -> flunk
+        end
+
       end
     end
   end

@@ -50,7 +50,7 @@ defmodule Ectoplasm do
         case __MODULE__.repository.insert(cs) do
           {:error, cs} ->
             assert {unquote(field), {unquote(error_message), []}} in cs.errors
-          _ -> flunk(unquote(field) <> " " <> unquote(error_message))
+          _ -> flunk
         end
 
       end

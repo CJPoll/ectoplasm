@@ -29,7 +29,11 @@ defmodule Ectoplasm do
   defmacro test_required(field, error_message \\ "can't be blank") do
     quote do
       test "must be present" do
-        params = Map.delete(__MODULE__.valid_params(), unquote(field))
+        params =
+          __MODULE__.valid_params()
+          |> Map.delete(unquote(field))
+          |> Map.delete(Atom.to_string(unquote(field)))
+
         struct = Kernel.struct!(@test_module)
         cs = @test_module.changeset(struct, params)
         refute cs.valid?

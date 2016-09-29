@@ -36,9 +36,13 @@ defmodule Ectoplasm do
   defmacro test_foreign_key(field) do
     quote do
       test "must be a foreign key" do
+        params = @factory.valid_params()
         params =
-          @factory.valid_params()
-          |> Map.update(unquote(field), 99999, fn(_) -> 99999 end)
+          if Map.has_key?(params, unquote(field)) do
+            Map.put(params, unquote(field), 99999)
+          else
+            Map.put(params, Atom.to_string(unquote(field)), 99999)
+          end
 
         struct = Kernel.struct!(@test_module)
         cs = @test_module.changeset(struct, params)

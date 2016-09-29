@@ -1,7 +1,7 @@
 defmodule Ectoplasm do
-  @callback valid_params()  :: %{}
   @callback test_module()   :: module
   @callback repository()    :: module
+  @callback factory()       :: module
 
   defmacro __using__(_) do
     quote do
@@ -9,6 +9,13 @@ defmodule Ectoplasm do
 
       require Ectoplasm
       import Ectoplasm
+    end
+  end
+
+  defmacro factory(module) do
+    quote do
+      @factory unquote(module)
+      def factory(), do: @factory
     end
   end
 
@@ -26,11 +33,27 @@ defmodule Ectoplasm do
     end
   end
 
+  defmacro test_foreign_key(field) do
+    quote do
+      test "must be a foreign key" do
+        params =
+          @factory.valid_params()
+          |> Map.update(unquote(field), 99999, fn(_) -> 99999 end)
+
+        struct = Kernel.struct!(@test_module)
+        cs = @test_module.changeset(struct, params)
+        {status, changeset} = @repository.insert(cs)
+
+        assert {unquote(field), {"does not exist", []}} in changeset.errors
+      end
+    end
+  end
+
   defmacro test_required(field, error_message \\ "can't be blank") do
     quote do
       test "must be present" do
         params =
-          __MODULE__.valid_params()
+          @factory.valid_params()
           |> Map.delete(unquote(field))
           |> Map.delete(Atom.to_string(unquote(field)))
 
@@ -45,7 +68,7 @@ defmodule Ectoplasm do
   defmacro test_unique(field, error_message \\ "has already been taken") do
     quote do
       test "must be unique" do
-        params = __MODULE__.valid_params()
+        params = @factory.valid_params()
         struct = Kernel.struct!(@test_module)
         cs = @test_module.changeset(struct, params)
         assert cs.valid?
@@ -61,17 +84,10 @@ defmodule Ectoplasm do
     end
   end
 
-  defmacro valid_params(params) do
-    quote do
-      @valid_params unquote(params)
-      def valid_params(), do: @valid_params
-    end
-  end
-
-  defmacro validate_params! do
+  defmacro validate_factory! do
     quote do
       test "valid_params must be valid" do
-        params = __MODULE__.valid_params()
+        params = @factory.valid_params()
         struct = Kernel.struct!(@test_module)
         cs = @test_module.changeset(struct, params)
         assert cs.valid?

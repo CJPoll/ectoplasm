@@ -67,4 +67,15 @@ defmodule Ectoplasm do
       def valid_params(), do: @valid_params
     end
   end
+
+  defmacro validate_params! do
+    quote do
+      test "valid_params must be valid" do
+        params = __MODULE__.valid_params()
+        struct = Kernel.struct!(@test_module)
+        cs = @test_module.changeset(struct, params)
+        assert cs.valid?
+      end
+    end
+  end
 end

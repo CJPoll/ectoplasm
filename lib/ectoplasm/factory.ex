@@ -27,6 +27,12 @@ defmodule Ectoplasm.Factory do
       end
 
       def create!(params \\ %{}) do
+        params
+        |> Enum.map(fn
+          ({k, v}) when is_atom(k) -> {Atom.to_string(k), v}
+          ({k, v}) when is_binary(k) -> {k, v}
+        end)
+        |> Map.new
         params = Map.merge(valid_params(), params)
         struct = Kernel.struct!(@product)
         cs = @product.changeset(struct, params)

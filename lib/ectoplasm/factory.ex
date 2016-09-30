@@ -29,11 +29,18 @@ defmodule Ectoplasm.Factory do
       def create!(params \\ %{}) do
         params
         |> Enum.map(fn
-          ({k, v}) when is_atom(k) -> {Atom.to_string(k), v}
-          ({k, v}) when is_binary(k) -> {k, v}
-        end)
+             ({k, v}) when is_atom(k) -> {Atom.to_string(k), v}
+             ({k, v}) when is_binary(k) -> {k, v}
+           end)
         |> Map.new
-        params = Map.merge(valid_params(), params)
+        params =
+          valid_params()
+          |> Enum.map(fn
+               ({k, v}) when is_atom(k) -> {Atom.to_string(k), v}
+               ({k, v}) when is_binary(k) -> {k, v}
+             end)
+          |> Map.new
+          |> Map.merge(params)
         struct = Kernel.struct!(@product)
         cs = @product.changeset(struct, params)
         __MODULE__.repository.insert!(cs)

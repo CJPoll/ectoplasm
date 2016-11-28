@@ -3,6 +3,9 @@ defmodule Ectoplasm.Mixfile do
 
   def project do
     [app: :ectoplasm,
+     description: "A collection of factories and helpers for testing ecto schemas",
+     package: package(),
+     licenses: ["MIT"],
      version: "0.1.0",
      elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
@@ -16,5 +19,11 @@ defmodule Ectoplasm.Mixfile do
 
   defp deps do
     [{:ecto, ">= 2.0.0"}]
+  end
+
+  defp package do
+    [licenses: ["MIT"],
+     maintainers: ["cjpoll@gmail.com"],
+     links: %{"Github" => "http://github.com/cjpoll/ectoplasm"}]
   end
 end

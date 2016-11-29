@@ -18,13 +18,27 @@ end
 ## Usage
 
 ```elixir
+defmodule MyApp.User.Factory do
+  builds MyApp.User
+  repo MyApp.Repo
+
+  valid_params %{some: :params}
+
+  # Alternatively:
+  valid_params do
+    # Do whatever you need to set up params here
+
+    # Return valid params
+  end
+end
+
 defmodule MyApp.User.Test do
 	use MyApp.ModelCase
 	use Ectoplasm
 
 	repo MyApp.Repo
 	testing MyApp.User
-	valid_params %{email: "myemail@gmail.com"}
+	factory MyApp.User.Factory
 
 	describe "email" do
 		test_required(:email)

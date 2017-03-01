@@ -13,6 +13,56 @@ defmodule Ectoplasm do
     end
   end
 
+  defmacro at_least(field, number, opts \\ [])
+
+  defmacro at_least(field, number, opts) do
+    error_message = Keyword.get(opts, :message, "must be greater than or equal to #{inspect number}")
+
+    quote do
+      test "must be greater than or equal to #{inspect unquote(number)}", %{valid_params: params} do
+        params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number) - 1)
+
+        changeset = @test_module.changeset(%@test_module{}, params)
+
+        if changeset.valid? do
+          raise "Expected setting #{inspect unquote(field)} to #{inspect (unquote(number) - 1)} to invalidate the changeset. It should only accept values greater than or equal to #{inspect unquote(number)}"
+        end
+
+        assert {unquote(field), unquote(error_message)} in errors_on(changeset)
+
+        params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number))
+
+        changeset = @test_module.changeset(%@test_module{}, params)
+        assert changeset.valid?
+      end
+    end
+  end
+
+  defmacro at_most(field, number, opts \\ [])
+
+  defmacro at_most(field, number, opts) do
+    error_message = Keyword.get(opts, :message, "must be less than or equal to #{inspect number}")
+
+    quote do
+      test "must be less than or equal to#{inspect unquote(number)}", %{valid_params: params} do
+        params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number) + 1)
+
+        changeset = @test_module.changeset(%@test_module{}, params)
+
+        if changeset.valid? do
+          raise "Expected setting #{inspect unquote(field)} to #{inspect (unquote(number) + 1)} to invalidate the changeset. It should only accept values less than or equal to #{inspect unquote(number)}"
+        end
+
+        assert {unquote(field), unquote(error_message)} in errors_on(changeset)
+
+        params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number))
+
+        changeset = @test_module.changeset(%@test_module{}, params)
+        assert changeset.valid?
+      end
+    end
+  end
+
   defmacro exact_length(field, length, opts \\ [])
 
   defmacro exact_length(field, _length, _opts) when is_binary(field) do
@@ -53,6 +103,31 @@ defmodule Ectoplasm do
     end
   end
 
+  defmacro greater_than(field, number, opts \\ [])
+
+  defmacro greater_than(field, number, opts) do
+    error_message = Keyword.get(opts, :message, "must be greater than #{inspect number}")
+
+    quote do
+      test "must be greater than #{inspect unquote(number)}", %{valid_params: params} do
+        params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number))
+
+        changeset = @test_module.changeset(%@test_module{}, params)
+
+        if changeset.valid? do
+          raise "Expected setting #{inspect unquote(field)} to #{inspect unquote(number)} to invalidate the changeset. It should only accept values greater than #{inspect unquote(number)}"
+        end
+
+        assert {unquote(field), unquote(error_message)} in errors_on(changeset)
+
+        params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number) + 1)
+
+        changeset = @test_module.changeset(%@test_module{}, params)
+        assert changeset.valid?
+      end
+    end
+  end
+
   defmacro included_in(field, inclusions, alternate, opts \\ [])
 
   defmacro included_in(field, inclusions, alternate, opts) when is_list(inclusions) do
@@ -69,6 +144,31 @@ defmodule Ectoplasm do
         end
 
         assert {unquote(field), unquote(error_message)} in errors_on(changeset)
+      end
+    end
+  end
+
+  defmacro less_than(field, number, opts \\ [])
+
+  defmacro less_than(field, number, opts) do
+    error_message = Keyword.get(opts, :message, "must be less than #{inspect number}")
+
+    quote do
+      test "must be less than #{inspect unquote(number)}", %{valid_params: params} do
+        params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number))
+
+        changeset = @test_module.changeset(%@test_module{}, params)
+
+        if changeset.valid? do
+          raise "Expected setting #{inspect unquote(field)} to #{inspect unquote(number)} to invalidate the changeset. It should only accept values less than #{inspect unquote(number)}"
+        end
+
+        assert {unquote(field), unquote(error_message)} in errors_on(changeset)
+
+        params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number) - 1)
+
+        changeset = @test_module.changeset(%@test_module{}, params)
+        assert changeset.valid?
       end
     end
   end

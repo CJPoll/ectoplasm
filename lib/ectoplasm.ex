@@ -46,7 +46,27 @@ defmodule Ectoplasm do
         {status, changeset} =
           %@test_module{}
           |> @test_module.changeset(params)
-          |> @repository.insert(cs)
+          |> repo.insert
+
+        assert {unquote(field), unquote(error_message)} in errors_on(changeset)
+      end
+    end
+  end
+
+  defmacro included_in(field, inclusions, alternate, opts \\ [])
+
+  defmacro included_in(field, inclusions, alternate, opts) when is_list(inclusions) do
+    error_message = Keyword.get(opts, :message, "is invalid")
+
+    quote do
+      test "only accepts certain values", %{valid_params: params} do
+        params = Ectoplasm.Params.set_field(params, unquote(field), unquote(alternate))
+
+        changeset = @test_module.changeset(%@test_module{}, params)
+
+        if changeset.valid? do
+          raise "Expected setting #{inspect unquote(field)} to #{inspect unquote(alternate)} to invalidate the changeset. It should only accept values in #{inspect unquote(inclusions)}"
+        end
 
         assert {unquote(field), unquote(error_message)} in errors_on(changeset)
       end

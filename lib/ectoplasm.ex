@@ -17,8 +17,10 @@ defmodule Ectoplasm do
 
   defmacro at_least(field, number, opts) do
     error_message = Keyword.get(opts, :message, "must be greater than or equal to #{inspect number}")
+    tags = Keyword.get(opts, :tags, [])
 
     quote do
+      @tag unquote(tags)
       test "must be greater than or equal to #{inspect unquote(number)}", %{valid_params: params} do
         params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number) - 1)
 
@@ -42,13 +44,14 @@ defmodule Ectoplasm do
 
   defmacro at_most(field, number, opts) do
     error_message = Keyword.get(opts, :message, "must be less than or equal to #{inspect number}")
+    tags = Keyword.get(opts, :tags, [])
 
     quote do
+      @tag unquote(tags)
       test "must be less than or equal to#{inspect unquote(number)}", %{valid_params: params} do
         params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number) + 1)
 
-        changeset = @test_module.changeset(%@test_module{}, params)
-
+        changeset = @test_module.changeset(%@test_module{}, params) 
         if changeset.valid? do
           raise "Expected setting #{inspect unquote(field)} to #{inspect (unquote(number) + 1)} to invalidate the changeset. It should only accept values less than or equal to #{inspect unquote(number)}"
         end
@@ -69,10 +72,12 @@ defmodule Ectoplasm do
     raise "exact_length/3 expects the field name to be an atom."
   end
 
-  defmacro exact_length(field, length, _opts) when is_atom(field) do
+  defmacro exact_length(field, length, opts) when is_atom(field) do
     error_message = "should be #{length} character(s)"
+    tags = Keyword.get(opts, :tags, [])
 
     quote do
+      @tag unquote(tags)
       test "must have a length of exactly #{inspect unquote(length)}", %{valid_params: params} do
         params = Ectoplasm.Params.set_length(params, unquote(field), unquote(length + 1))
 
@@ -87,8 +92,10 @@ defmodule Ectoplasm do
 
   defmacro foreign_key(field, opts) do
     error_message = Keyword.get(opts, :message, "does not exist")
+    tags = Keyword.get(opts, :tags, [])
 
     quote do
+      @tag unquote(tags)
       test "must be a foreign key", %{valid_params: params} do
         params = Ectoplasm.Params.set_field(params, unquote(field), -1)
         repo = Ectoplasm.get_repo!
@@ -107,8 +114,10 @@ defmodule Ectoplasm do
 
   defmacro greater_than(field, number, opts) do
     error_message = Keyword.get(opts, :message, "must be greater than #{inspect number}")
+    tags = Keyword.get(opts, :tags, [])
 
     quote do
+      @tag unquote(tags)
       test "must be greater than #{inspect unquote(number)}", %{valid_params: params} do
         params = Ectoplasm.Params.set_field(params, unquote(field), unquote(number))
 
@@ -132,8 +141,10 @@ defmodule Ectoplasm do
 
   defmacro included_in(field, inclusions, alternate, opts) when is_list(inclusions) do
     error_message = Keyword.get(opts, :message, "is invalid")
+    tags = Keyword.get(opts, :tags, [])
 
     quote do
+      @tag unquote(tags)
       test "only accepts certain values", %{valid_params: params} do
         params = Ectoplasm.Params.set_field(params, unquote(field), unquote(alternate))
 
@@ -179,10 +190,12 @@ defmodule Ectoplasm do
     raise "maximum_length/3 expects the field name to be an atom."
   end
 
-  defmacro maximum_length(field, length, _opts) when is_atom(field) do
+  defmacro maximum_length(field, length, opts) when is_atom(field) do
     error_message = "should be at most #{length} character(s)"
+    tags = Keyword.get(opts, :tags, [])
 
     quote do
+      @tag unquote(tags)
       test "must have a length of at most #{inspect unquote(length)}", %{valid_params: params} do
         params = Ectoplasm.Params.set_length(params, unquote(field), unquote(length + 1))
 
@@ -199,10 +212,12 @@ defmodule Ectoplasm do
     raise "minimum_length/3 expects the field name to be an atom."
   end
 
-  defmacro minimum_length(field, length, _opts) when is_atom(field) do
+  defmacro minimum_length(field, length, opts) when is_atom(field) do
     error_message = "should be at least #{length} character(s)"
+    tags = Keyword.get(opts, :tags, [])
 
     quote do
+      @tag unquote(tags)
       test "must have a length of at least #{inspect unquote(length)}", %{valid_params: params} do
         params = Ectoplasm.Params.set_length(params, unquote(field), unquote(length - 1))
 
@@ -221,24 +236,32 @@ defmodule Ectoplasm do
 
   defmacro must_match(field, confirmation_field, opts) when is_atom(field) and is_atom(confirmation_field) do
     error_message = Keyword.get(opts, :message, "does not match confirmation")
+    tags = Keyword.get(opts, :tags, [])
+    alt_value = Keyword.get(opts, :alt_value, "alskdjfklasdj")
 
-      quote do
-        test "must match #{inspect unquote(confirmation_field)}", %{valid_params: params} do
-          params = Ectoplasm.Params.delete_field(params, unquote(field))
+    quote do
+      @tag unquote(tags)
+      test "must match #{inspect unquote(confirmation_field)}", %{valid_params: params} do
+        params = Ectoplasm.Params.set_field(params, unquote(confirmation_field), unquote(alt_value))
 
-          changeset = @test_module.changeset(%@test_module{}, params)
+        changeset = @test_module.changeset(%@test_module{}, params)
 
-          assert {unquote(confirmation_field), unquote(error_message)} in errors_on(changeset)
-        end
+        assert {unquote(confirmation_field), unquote(error_message)} in errors_on(changeset)
       end
+    end
   end
 
-  defmacro optional_field(field) when is_binary(field) do
+  defmacro optional_field(field, opts \\ [])
+
+  defmacro optional_field(field, _opts) when is_binary(field) do
     raise "optional_field/2 requires the field name to be an atom, not a string. Found: #{field}"
   end
 
-  defmacro optional_field(field) when is_atom(field) do
+  defmacro optional_field(field, opts) when is_atom(field) do
+    tags = Keyword.get(opts, :tags, [])
+
     quote do
+      @tag unquote(tags)
       test "is optional", %{valid_params: params} do
         params = Ectoplasm.Params.delete_field(params, unquote(field))
 
@@ -259,8 +282,10 @@ defmodule Ectoplasm do
 
   defmacro required_field(field, opts) when is_atom(field) do
     error_message = Keyword.get(opts, :message, "can't be blank")
+    tags = Keyword.get(opts, :tags, false)
 
     quote do
+      @tag unquote(tags)
       test "is required", %{valid_params: params} do
         params = Ectoplasm.Params.delete_field(params, unquote(field))
 
@@ -269,6 +294,7 @@ defmodule Ectoplasm do
         assert {unquote(field), unquote(error_message)} in errors_on(changeset)
       end
 
+      @tag unquote(tags)
       test "can not be blank", %{valid_params: params} do
         params =
           params
@@ -277,13 +303,18 @@ defmodule Ectoplasm do
 
         changeset = @test_module.changeset(%@test_module{}, params)
 
-        assert {unquote(field), unquote(error_message)} in errors_on(changeset)
+        assert Ectoplasm.has_error?(changeset, unquote(field), unquote(error_message))
       end
     end
   end
 
-  defmacro scope_by(field, alternate_value) when is_atom(field) do
+  defmacro scope_by(field, alternate_value, opts \\ [])
+
+  defmacro scope_by(field, alternate_value, opts) when is_atom(field) do
+    tags = Keyword.get(opts, :tags, [])
+
     quote do
+      @tag unquote(tags)
       test "scopes a query to a specific value for #{inspect unquote(field)}", %{valid_params: params} do
         if Ectoplasm.Params.get_field(params, unquote(field)) == unquote(alternate_value) do
           raise "scope_by/2 requires that the alternate value be different from the value in valid_params"
@@ -319,8 +350,10 @@ defmodule Ectoplasm do
 
   defmacro unique_field(field, opts) when is_atom(field) do
     error_message = Keyword.get(opts, :message, "has already been taken")
+    tags = Keyword.get(opts, :tags, [])
 
     quote do
+      @tag unquote(tags)
       test "must be unique", %{valid_params: params} do
         changeset = @test_module.changeset(%@test_module{}, params)
 
@@ -353,16 +386,14 @@ defmodule Ectoplasm do
     end
   end
 
-  defmacro has_error?(%Ecto.Changeset{} = changeset, field, error_message) do
-    quote do
-      has_error?(errors_on(unquote(changeset)), unquote(field), unquote(error_message))
-    end
+  def has_error?(%Ecto.Changeset{} = changeset, field, error_message) do
+    changeset
+    |> errors_on
+    |> has_error?(field, error_message)
   end
 
-  defmacro has_error?(errors, field, error_message) do
-    quote do
-      assert {unquote(field), unquote(error_message)} in unquote(errors)
-    end
+  def has_error?(errors, field, error_message) do
+    {field, error_message} in errors
   end
 
   def errors_on(%Ecto.Changeset{} = changeset) do

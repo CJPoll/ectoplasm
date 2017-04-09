@@ -88,24 +88,25 @@ defmodule Ectoplasm do
     end
   end
 
-  defmacro foreign_key(field, opts \\ [])
+  defmacro foreign_key(foreign_key, opts \\ [])
 
-  defmacro foreign_key(field, opts) do
+  defmacro foreign_key(foreign_key, opts) do
     error_message = Keyword.get(opts, :message, "does not exist")
+    assoc = Keyword.get(opts, :assoc, foreign_key)
     tags = Keyword.get(opts, :tags, [])
 
     quote do
       @tag unquote(tags)
       test "must be a foreign key", %{valid_params: params} do
-        params = Ectoplasm.Params.set_field(params, unquote(field), -1)
         repo = Ectoplasm.get_repo!
 
         {status, changeset} =
           %@test_module{}
           |> @test_module.changeset(params)
+          |> Ecto.Changeset.put_change(unquote(foreign_key), -1)
           |> repo.insert
 
-        assert {unquote(field), unquote(error_message)} in errors_on(changeset)
+        assert {unquote(assoc), unquote(error_message)} in errors_on(changeset)
       end
     end
   end
@@ -400,7 +401,7 @@ defmodule Ectoplasm do
     changeset
     |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
       Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
+        String.replace(acc, "%{#{key}}", inspect value)
       end)
     end)
     |> Enum.flat_map(fn {key, errors} -> for msg <- errors, do: {key, msg} end)
